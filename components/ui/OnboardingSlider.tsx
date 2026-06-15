@@ -3,34 +3,36 @@ import PrimaryButton from "@/components/ui/PrimaryButton";
 import React, { useRef, useState } from "react";
 
 import {
-    Dimensions,
     FlatList,
     Image,
+    ImageSourcePropType,
     NativeScrollEvent,
     NativeSyntheticEvent,
     SafeAreaView,
     StyleSheet,
     Text,
+    useWindowDimensions,
     View,
 } from "react-native";
 
-
-
-const { width } = Dimensions.get("window");
+const brandingImage = require("../../assets/images/Branding.png");
 
 export type Slide = {
     id: string;
     title: string;
     description: string;
-    image: any; // require("..."), or { uri: string }
+    image: ImageSourcePropType;
+    imageHeight?: number;
+    imageWidth?: string;
 };
 
 type Props = {
     slides: Slide[];
-    onDone?: () => void; // called on last slide button press
+    onDone?: () => void;
 };
 
 const OnboardingSlider: React.FC<Props> = ({ slides, onDone }) => {
+    const { width } = useWindowDimensions();
     const [currentIndex, setCurrentIndex] = useState(0);
     const listRef = useRef<FlatList<Slide>>(null);
 
@@ -49,10 +51,23 @@ const OnboardingSlider: React.FC<Props> = ({ slides, onDone }) => {
 
     const renderItem = ({ item }: { item: Slide }) => (
         <View style={[styles.slide, { width }]}>
-            {/* Logo - replace with your own if you like */}
-            <Text style={styles.logo}>Beauty Spot</Text>
+            <View style={styles.logoWrap}>
+                <Image source={brandingImage} style={styles.logo} resizeMode="contain" />
+            </View>
 
-            <Image source={item.image} style={styles.image} resizeMode="contain" />
+            <View style={styles.imageWrap}>
+                <Image
+                    source={item.image}
+                    style={[
+                        styles.image,
+                        {
+                            height: item.imageHeight ?? 190,
+                            width: item.imageWidth ?? "82%",
+                        },
+                    ]}
+                    resizeMode="contain"
+                />
+            </View>
 
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.description}>{item.description}</Text>
@@ -74,7 +89,6 @@ const OnboardingSlider: React.FC<Props> = ({ slides, onDone }) => {
                     scrollEventThrottle={16}
                 />
 
-                {/* Dots */}
                 <View style={styles.dotsContainer}>
                     {slides.map((_, index) => (
                         <View
@@ -87,7 +101,6 @@ const OnboardingSlider: React.FC<Props> = ({ slides, onDone }) => {
                     ))}
                 </View>
 
-                {/* Button */}
                 <PrimaryButton
                     label={
                         currentIndex === slides.length - 1 ? "GET STARTED" : "NEXT"
@@ -106,52 +119,66 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        paddingHorizontal: 24,
-        paddingBottom: 24,
+        backgroundColor: "#ffffff",
+        paddingBottom: 58,
     },
     slide: {
         flex: 1,
         alignItems: "center",
         justifyContent: "flex-start",
-        paddingTop: 40,
+        paddingHorizontal: 34,
+        paddingTop: 26,
+    },
+    logoWrap: {
+        minHeight: 112,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 10,
     },
     logo: {
-        fontSize: 28,
-        fontWeight: "700",
-        marginBottom: 24,
+        width: 190,
+        height: 108,
+    },
+    imageWrap: {
+        width: "100%",
+        minHeight: 185,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 14,
     },
     image: {
-        width: "100%",
-        height: 230,
-        marginBottom: 32,
+        maxWidth: "100%",
     },
     title: {
-        fontSize: 20,
+        color: "#26262b",
+        fontSize: 15,
         fontWeight: "700",
         textAlign: "center",
-        marginBottom: 12,
+        marginBottom: 18,
     },
     description: {
-        fontSize: 14,
+        color: "#15151a",
+        fontSize: 12,
+        lineHeight: 15,
         textAlign: "center",
-        color: "#555",
-        paddingHorizontal: 8,
+        paddingHorizontal: 3,
     },
     dotsContainer: {
         flexDirection: "row",
         justifyContent: "center",
-        marginTop: 24,
+        alignItems: "center",
+        marginTop: 10,
+        marginBottom: 30,
     },
     dot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: "#ccc",
-        marginHorizontal: 4,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: "#d9d6ce",
+        marginHorizontal: 3,
     },
     dotActive: {
-        width: 16,
-        backgroundColor: "#007bff",
+        backgroundColor: "#3b73d9",
     },
 });
 

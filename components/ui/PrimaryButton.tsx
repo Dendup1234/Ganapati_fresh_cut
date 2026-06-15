@@ -19,16 +19,18 @@ const PrimaryButton: React.FC<Props> = ({ label, onPress, style }) => {
 const styles = StyleSheet.create({
     button: {
         width: "100%",
-        paddingVertical: 14,
+        minHeight: 52,
+        paddingVertical: 15,
         borderRadius: 999,
         alignItems: "center",
         justifyContent: "center",
-        marginTop: 24,
+        backgroundColor: "#3b73d9",
     },
     label: {
         color: "#ffffff",
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 12,
+        fontWeight: "700",
+        letterSpacing: 0.8,
     },
 });
 
