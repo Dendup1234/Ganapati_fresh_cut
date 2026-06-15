@@ -6,6 +6,7 @@ import {
     FlatList,
     Image,
     ImageSourcePropType,
+    DimensionValue,
     NativeScrollEvent,
     NativeSyntheticEvent,
     SafeAreaView,
@@ -23,7 +24,7 @@ export type Slide = {
     description: string;
     image: ImageSourcePropType;
     imageHeight?: number;
-    imageWidth?: string;
+    imageWidth?: DimensionValue;
 };
 
 type Props = {

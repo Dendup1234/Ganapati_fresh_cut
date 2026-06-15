@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
     Image,
     KeyboardAvoidingView,
     Platform,
@@ -15,31 +14,14 @@ import {
     View,
 } from "react-native";
 
-const DUMMY_EMAIL = "test@example.com";
-const DUMMY_PASSWORD = "password123";
-const REGISTER_PROMPT = "Don't have an account? ";
 const googleIcon = require("../assets/images/icons8-google-48.png");
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
     const router = useRouter();
+    const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [securePassword, setSecurePassword] = useState(true);
-
-    const handleLogin = () => {
-        if (
-            email.trim().toLowerCase() === DUMMY_EMAIL &&
-            password === DUMMY_PASSWORD
-        ) {
-            router.replace("/home");
-            return;
-        }
-
-        Alert.alert(
-            "Invalid login",
-            "Use test@example.com and password123 for the dummy account."
-        );
-    };
+    const [confirmPassword, setConfirmPassword] = useState("");
 
     return (
         <SafeAreaView style={styles.safe}>
@@ -52,55 +34,57 @@ export default function LoginScreen() {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    <Text style={styles.title}>Welcome back! Glad to see you, Again!</Text>
+                    <Pressable style={styles.backButton} onPress={() => router.back()}>
+                        <Ionicons name="chevron-back" size={18} color="#111827" />
+                    </Pressable>
+
+                    <Text style={styles.title}>Hello! Register to get started</Text>
 
                     <View style={styles.form}>
                         <TextInput
+                            value={username}
+                            onChangeText={setUsername}
+                            placeholder="Username"
+                            placeholderTextColor="#9aa3b2"
+                            style={styles.input}
+                        />
+                        <TextInput
                             value={email}
                             onChangeText={setEmail}
-                            placeholder="Enter your email"
+                            placeholder="Email"
                             placeholderTextColor="#9aa3b2"
                             autoCapitalize="none"
                             keyboardType="email-address"
                             style={styles.input}
                         />
-
-                        <View style={styles.passwordWrap}>
-                            <TextInput
-                                value={password}
-                                onChangeText={setPassword}
-                                placeholder="Enter your password"
-                                placeholderTextColor="#9aa3b2"
-                                secureTextEntry={securePassword}
-                                style={[styles.input, styles.passwordInput]}
-                            />
-                            <Pressable
-                                style={styles.eyeButton}
-                                onPress={() => setSecurePassword((value) => !value)}
-                            >
-                                <Ionicons
-                                    name={securePassword ? "eye-off" : "eye"}
-                                    size={17}
-                                    color="#7b8494"
-                                />
-                            </Pressable>
-                        </View>
+                        <TextInput
+                            value={password}
+                            onChangeText={setPassword}
+                            placeholder="Password"
+                            placeholderTextColor="#9aa3b2"
+                            secureTextEntry
+                            style={styles.input}
+                        />
+                        <TextInput
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            placeholder="Confirm password"
+                            placeholderTextColor="#9aa3b2"
+                            secureTextEntry
+                            style={styles.input}
+                        />
                     </View>
 
                     <Pressable
-                        style={styles.forgotButton}
-                        onPress={() => router.push("/forgot-password")}
+                        style={styles.primaryButton}
+                        onPress={() => router.push("/otp")}
                     >
-                        <Text style={styles.forgotText}>Forgot Password?</Text>
-                    </Pressable>
-
-                    <Pressable style={styles.primaryButton} onPress={handleLogin}>
-                        <Text style={styles.primaryText}>Login</Text>
+                        <Text style={styles.primaryText}>Register</Text>
                     </Pressable>
 
                     <View style={styles.dividerRow}>
                         <View style={styles.divider} />
-                        <Text style={styles.dividerText}>Or Login with</Text>
+                        <Text style={styles.dividerText}>Or Register with</Text>
                         <View style={styles.divider} />
                     </View>
 
@@ -109,9 +93,9 @@ export default function LoginScreen() {
                     </Pressable>
 
                     <View style={styles.footerRow}>
-                        <Text style={styles.footerText}>{REGISTER_PROMPT}</Text>
-                        <Pressable onPress={() => router.push("/register")}>
-                            <Text style={styles.footerLink}>Register Now</Text>
+                        <Text style={styles.footerText}>Already have an account? </Text>
+                        <Pressable onPress={() => router.replace("/login")}>
+                            <Text style={styles.footerLink}>Login Now</Text>
                         </Pressable>
                     </View>
                 </ScrollView>
@@ -131,18 +115,28 @@ const styles = StyleSheet.create({
     content: {
         flexGrow: 1,
         paddingHorizontal: 28,
-        paddingTop: 104,
-        paddingBottom: 32,
+        paddingTop: 56,
+        paddingBottom: 30,
+    },
+    backButton: {
+        width: 34,
+        height: 34,
+        borderWidth: 1,
+        borderColor: "#e5e9f0",
+        borderRadius: 8,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 28,
     },
     title: {
         color: "#10131a",
         fontSize: 24,
         lineHeight: 30,
         fontWeight: "800",
-        marginBottom: 30,
+        marginBottom: 28,
     },
     form: {
-        gap: 20,
+        gap: 18,
     },
     input: {
         height: 52,
@@ -154,37 +148,13 @@ const styles = StyleSheet.create({
         color: "#111827",
         fontSize: 13,
     },
-    passwordWrap: {
-        position: "relative",
-    },
-    passwordInput: {
-        paddingRight: 48,
-    },
-    eyeButton: {
-        position: "absolute",
-        top: 0,
-        right: 0,
-        width: 48,
-        height: 52,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    forgotButton: {
-        alignSelf: "center",
-        marginTop: 18,
-        marginBottom: 22,
-    },
-    forgotText: {
-        color: "#6b7280",
-        fontSize: 11,
-        fontWeight: "500",
-    },
     primaryButton: {
         height: 52,
         borderRadius: 6,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "#3b73d9",
+        marginTop: 24,
     },
     primaryText: {
         color: "#ffffff",
@@ -194,7 +164,7 @@ const styles = StyleSheet.create({
     dividerRow: {
         flexDirection: "row",
         alignItems: "center",
-        marginTop: 26,
+        marginTop: 28,
         marginBottom: 18,
     },
     divider: {
