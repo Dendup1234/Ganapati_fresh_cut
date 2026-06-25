@@ -17,6 +17,8 @@ import {
 
 const DUMMY_EMAIL = "test@example.com";
 const DUMMY_PASSWORD = "password123";
+const ADMIN_EMAIL = "admin@example.com";
+const ADMIN_PASSWORD = "admin123";
 const REGISTER_PROMPT = "Don't have an account? ";
 const googleIcon = require("../assets/images/icons8-google-48.png");
 
@@ -28,6 +30,14 @@ export default function LoginScreen() {
 
     const handleLogin = () => {
         if (
+            email.trim().toLowerCase() === ADMIN_EMAIL &&
+            password === ADMIN_PASSWORD
+        ) {
+            router.replace("/admin-home");
+            return;
+        }
+
+        if (
             email.trim().toLowerCase() === DUMMY_EMAIL &&
             password === DUMMY_PASSWORD
         ) {
@@ -37,7 +47,7 @@ export default function LoginScreen() {
 
         Alert.alert(
             "Invalid login",
-            "Use test@example.com and password123 for the dummy account."
+            "Use test@example.com/password123 or admin@example.com/admin123."
         );
     };
 

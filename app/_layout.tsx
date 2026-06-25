@@ -12,6 +12,7 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="otp" options={{ headerShown: false }} />
@@ -19,6 +20,16 @@ export default function RootLayout() {
         <Stack.Screen name="reset-otp" options={{ headerShown: false }} />
         <Stack.Screen name="change-password" options={{ headerShown: false }} />
         <Stack.Screen name="home" options={{ headerShown: false }} />
+        <Stack.Screen name="service-profile" options={{ headerShown: false }} />
+        <Stack.Screen name="queue" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ headerShown: false }} />
+        <Stack.Screen name="settings" options={{ headerShown: false }} />
+        <Stack.Screen name="admin-home" options={{ headerShown: false }} />
+        <Stack.Screen name="admin-queue" options={{ headerShown: false }} />
+        <Stack.Screen name="admin-services" options={{ headerShown: false }} />
+        <Stack.Screen name="admin-add-service" options={{ headerShown: false }} />
+        <Stack.Screen name="admin-edit-service" options={{ headerShown: false }} />
+        <Stack.Screen name="admin-settings" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />

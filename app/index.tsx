@@ -39,7 +39,7 @@ export default function OnboardingScreen() {
     <OnboardingSlider
       slides={slides}
       onDone={() => {
-        router.replace("/login");
+        router.replace("/welcome");
       }}
     />
   );
