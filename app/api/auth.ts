@@ -2,7 +2,7 @@ import * as SecureStore from "expo-secure-store";
 
 import apiClient from "./axios";
 
-const AUTH_TOKEN_KEY = "beauty_spot_auth_token";
+export const AUTH_TOKEN_KEY = "beauty_spot_auth_token";
 
 export const AUTH_APIS = [
   { name: "login", method: "POST", path: "/api/v1/login" },
@@ -57,29 +57,51 @@ export type CurrentUserResponse = AuthUser;
 
 export type SignupResponse = ApiMessage;
 
-const setAuthorizationHeader = (authorization?: string) => {
+export const getRawAuthToken = (tokenOrAuthorization?: string) => {
+  if (!tokenOrAuthorization) {
+    return undefined;
+  }
+
+  return tokenOrAuthorization.replace(/^Bearer\s+/i, "");
+};
+
+export const getAuthorizationHeader = (tokenOrAuthorization?: string) => {
+  const token = getRawAuthToken(tokenOrAuthorization);
+
+  if (!token) {
+    return undefined;
+  }
+
+  return `Bearer ${token}`;
+};
+
+export const setAuthorizationHeader = (tokenOrAuthorization?: string) => {
+  const authorization = getAuthorizationHeader(tokenOrAuthorization);
+
   if (authorization) {
     apiClient.defaults.headers.common.Authorization = authorization;
   }
 };
 
-const clearAuthorizationHeader = () => {
+export const clearAuthorizationHeader = () => {
   delete apiClient.defaults.headers.common.Authorization;
 };
 
 export const saveAuthToken = async (authorization?: string) => {
-  if (!authorization) {
+  const token = getRawAuthToken(authorization);
+
+  if (!token) {
     return;
   }
 
-  await SecureStore.setItemAsync(AUTH_TOKEN_KEY, authorization);
-  setAuthorizationHeader(authorization);
+  await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
+  setAuthorizationHeader(token);
 };
 
 export const loadAuthToken = async () => {
-  const authorization = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-  setAuthorizationHeader(authorization ?? undefined);
-  return authorization;
+  const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+  setAuthorizationHeader(token ?? undefined);
+  return token;
 };
 
 export const clearAuthToken = async () => {
