@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import {
   AdminService,
   ServiceCategory,
@@ -6,6 +5,7 @@ import {
   listCategories,
   updateService,
 } from "@/app/api/services";
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -46,7 +46,9 @@ export default function AdminEditServiceScreen() {
   const [categoryId, setCategoryId] = useState(service?.category_id ?? 0);
   const [name, setName] = useState(service?.name ?? "");
   const [price, setPrice] = useState(String(service?.price ?? ""));
-  const [estimatedTime, setEstimatedTime] = useState(service?.estimated_time ?? "");
+  const [estimatedTime, setEstimatedTime] = useState(
+    service?.estimated_time ?? "",
+  );
   const [imageUrl, setImageUrl] = useState(service?.img ?? "");
   const [description, setDescription] = useState(service?.description ?? "");
   const [points, setPoints] = useState<string[]>(
@@ -91,7 +93,9 @@ export default function AdminEditServiceScreen() {
   };
 
   const removePoint = (index: number) => {
-    setPoints((current) => current.filter((_, pointIndex) => pointIndex !== index));
+    setPoints((current) =>
+      current.filter((_, pointIndex) => pointIndex !== index),
+    );
   };
 
   const handleUpdateService = async () => {
@@ -101,7 +105,10 @@ export default function AdminEditServiceScreen() {
       .filter((point) => point.length > 0);
 
     if (!service) {
-      Alert.alert("Missing service", "Please open this page from the services list.");
+      Alert.alert(
+        "Missing service",
+        "Please open this page from the services list.",
+      );
       return;
     }
 
@@ -132,9 +139,13 @@ export default function AdminEditServiceScreen() {
       });
       router.replace("/admin-services");
     } catch {
-      Alert.alert("Unable to update service", "Please check the details and try again.");
+      Alert.alert(
+        "Unable to update service",
+        "Please check the details and try again.",
+      );
     } finally {
       setSaving(false);
+      console.log(service);
     }
   };
 
@@ -143,24 +154,28 @@ export default function AdminEditServiceScreen() {
       return;
     }
 
-    Alert.alert("Remove service", "Are you sure you want to remove this service?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: async () => {
-          setRemoving(true);
-          try {
-            await deleteService(categoryId, service.id);
-            router.replace("/admin-services");
-          } catch {
-            Alert.alert("Unable to remove service", "Please try again.");
-          } finally {
-            setRemoving(false);
-          }
+    Alert.alert(
+      "Remove service",
+      "Are you sure you want to remove this service?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            setRemoving(true);
+            try {
+              await deleteService(categoryId, service.id);
+              router.replace("/admin-services");
+            } catch {
+              Alert.alert("Unable to remove service", "Please try again.");
+            } finally {
+              setRemoving(false);
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   return (
@@ -195,6 +210,7 @@ export default function AdminEditServiceScreen() {
         />
 
         <Text style={styles.label}>Category</Text>
+
         {loadingCategories ? (
           <ActivityIndicator color="#3b73d9" style={styles.categoryLoader} />
         ) : (
@@ -205,19 +221,28 @@ export default function AdminEditServiceScreen() {
               return (
                 <Pressable
                   key={category.id}
-                  style={styles.radioOption}
+                  style={[styles.radioOption, styles.disabledOption]}
+                  disabled={true}
                   onPress={() => setCategoryId(category.id)}
                 >
-                  <View style={[styles.radio, selected && styles.radioSelected]}>
+                  <View
+                    style={[
+                      styles.radio,
+                      selected && styles.radioSelected,
+                      styles.disabledRadio,
+                    ]}
+                  >
                     {selected ? <View style={styles.radioDot} /> : null}
                   </View>
-                  <Text style={styles.radioText}>{category.name}</Text>
+
+                  <Text style={[styles.radioText, styles.disabledText]}>
+                    {category.name}
+                  </Text>
                 </Pressable>
               );
             })}
           </View>
         )}
-
         <Text style={styles.label}>Service Points</Text>
         <View style={styles.pointsBox}>
           {points.map((point, index) => (
@@ -465,4 +490,16 @@ const styles = StyleSheet.create({
     opacity: 0.65,
   },
   buttonText: { color: "#ffffff", fontSize: 12, fontWeight: "800" },
+
+  disabledOption: {
+    opacity: 0.5,
+  },
+
+  disabledRadio: {
+    borderColor: "#ccc",
+  },
+
+  disabledText: {
+    color: "#999",
+  },
 });
