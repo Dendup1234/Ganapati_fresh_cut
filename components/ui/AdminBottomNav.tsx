@@ -1,15 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@/src/context/AuthContext";
 import { Href, useRouter } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-type NavKey = "home" | "queue" | "services" | "settings";
+type NavKey = "home" | "queue" | "services" | "staff" | "settings";
 
 type NavItem = {
     key: NavKey;
     label: string;
     icon: keyof typeof Ionicons.glyphMap;
     route: Href;
+    adminOnly?: boolean;
 };
 
 type Props = {
@@ -19,17 +21,33 @@ type Props = {
 const items: NavItem[] = [
     { key: "home", label: "Home", icon: "home-outline", route: "/admin-home" },
     { key: "queue", label: "Queue", icon: "people-outline", route: "/admin-queue" },
-    { key: "services", label: "Services", icon: "cut-outline", route: "/admin-services" },
+    {
+        key: "services",
+        label: "Services",
+        icon: "cut-outline",
+        route: "/admin-services",
+        adminOnly: true,
+    },
+    {
+        key: "staff",
+        label: "Staff",
+        icon: "person-add-outline",
+        route: "/admin/staff",
+        adminOnly: true,
+    },
     { key: "settings", label: "Settings", icon: "options-outline", route: "/admin-settings" },
 ];
 
 export default function AdminBottomNav({ active }: Props) {
     const router = useRouter();
+    const { user } = useAuth();
+    const isAdmin = Boolean(user?.is_admin || user?.role === "admin");
+    const visibleItems = items.filter((item) => !item.adminOnly || isAdmin);
 
     return (
         <View style={styles.wrap}>
             <View style={styles.bar}>
-                {items.map((item) => {
+                {visibleItems.map((item) => {
                     const isActive = item.key === active;
 
                     return (
@@ -84,7 +102,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
     },
     item: {
-        width: 72,
+        width: 64,
         minHeight: 58,
         alignItems: "center",
         justifyContent: "center",

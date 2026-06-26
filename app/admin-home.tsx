@@ -4,6 +4,7 @@ import {
     toggleCategoryActive,
 } from "@/app/api/services";
 import AdminBottomNav from "@/components/ui/AdminBottomNav";
+import { useAuth } from "@/src/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
@@ -37,6 +38,7 @@ const metrics = [
 ];
 
 export default function AdminHomeScreen() {
+  const { user } = useAuth();
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [togglingCategoryId, setTogglingCategoryId] = useState<number | null>(
     null,
@@ -140,7 +142,7 @@ export default function AdminHomeScreen() {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Hello, Admin</Text>
+          <Text style={styles.title}>Hi, {user?.username || "Admin"}</Text>
 
           <View style={styles.metricsGrid}>
             {metrics.map((metric) => (

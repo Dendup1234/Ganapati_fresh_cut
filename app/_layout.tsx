@@ -29,6 +29,7 @@ export default function RootLayout() {
           <Stack.Screen name="admin-home" options={{ headerShown: false, animation: 'none' }} />
           <Stack.Screen name="admin-queue" options={{ headerShown: false, animation: 'none' }} />
           <Stack.Screen name="admin-services" options={{ headerShown: false, animation: 'none' }} />
+          <Stack.Screen name="admin/staff" options={{ headerShown: false, animation: 'none' }} />
           <Stack.Screen name="admin-add-service" options={{ headerShown: false }} />
           <Stack.Screen name="admin-edit-service" options={{ headerShown: false }} />
           <Stack.Screen name="admin-settings" options={{ headerShown: false, animation: 'none' }} />

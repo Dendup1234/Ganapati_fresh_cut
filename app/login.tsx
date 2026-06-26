@@ -30,7 +30,9 @@ const googleIcon = require("../assets/images/icons8-google-48.png");
 
 const getDashboardRoute = (user?: AuthUser) => {
   const role = user?.role?.toLowerCase();
-  return user?.is_admin || role === "admin" ? "/admin-home" : "/home";
+  return user?.is_admin || role === "admin" || role === "stylist" || role === "staff"
+    ? "/admin-home"
+    : "/home";
 };
 
 export default function LoginScreen() {
@@ -40,7 +42,7 @@ export default function LoginScreen() {
   const [securePassword, setSecurePassword] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { setUser, signIn } = useAuth();
   const { request: googleRequest, promptAsync: promptGoogleSignIn } =
     useGoogleAuthRequest();
 
@@ -78,6 +80,7 @@ export default function LoginScreen() {
       });
       const user = await currentUser();
 
+      setUser(user);
       router.replace(getDashboardRoute(user ?? loginResult.data));
     } catch {
       if (handleDummyLogin()) {
