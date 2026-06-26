@@ -1,8 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
+import { currentUser } from "@/app/api/auth";
+import {
+    AdminService,
+    ServiceCategory,
+    listCategories,
+    listServices,
+} from "@/app/api/services";
 import BottomNav from "@/components/ui/BottomNav";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+    ActivityIndicator,
     Image,
     Pressable,
     SafeAreaView,
@@ -13,59 +21,109 @@ import {
     View,
 } from "react-native";
 
-const services = [
-    {
-        name: "Haircut",
-        image: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=240&q=80",
-    },
-    {
-        name: "Nails",
-        image: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=240&q=80",
-    },
-    {
-        name: "Facial",
-        image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=240&q=80",
-    },
-    {
-        name: "Spa",
-        image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=240&q=80",
-    },
-    {
-        name: "Waxing",
-        image: "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=240&q=80",
-    },
-    {
-        name: "Makeup",
-        image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=240&q=80",
-    },
-    {
-        name: "Shave",
-        image: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=240&q=80",
-    },
-    {
-        name: "Hair Color",
-        image: "https://images.unsplash.com/photo-1562322140-8baeececf3df?w=240&q=80",
-    },
-    {
-        name: "Head Massage",
-        image: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=240&q=80",
-    },
-    {
-        name: "Massage",
-        image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=240&q=80",
-    },
-    {
-        name: "Hair Wash",
-        image: "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?w=240&q=80",
-    },
-    {
-        name: "Skin Care",
-        image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=240&q=80",
-    },
-];
+const avatarImage =
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&q=80";
+const fallbackServiceImage =
+    "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=240&q=80";
+
+type CustomerService = AdminService & {
+    categoryName: string;
+};
+
+const isCustomerCategory = (category: ServiceCategory) => {
+    const name = category.name.toLowerCase();
+    return name.includes("barber") || name.includes("beauty");
+};
+
+const getCategoryIcon = (categoryName: string) => {
+    return categoryName.toLowerCase().includes("barber")
+        ? "cut-outline"
+        : "brush-outline";
+};
 
 export default function HomeScreen() {
     const router = useRouter();
+    const [customerName, setCustomerName] = useState("Customer");
+    const [creditScore, setCreditScore] = useState<number | null>(null);
+    const [categories, setCategories] = useState<ServiceCategory[]>([]);
+    const [services, setServices] = useState<CustomerService[]>([]);
+    const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        let mounted = true;
+
+        const loadDashboard = async () => {
+            setIsLoading(true);
+            setError("");
+
+            try {
+                const [user, nextCategories] = await Promise.all([
+                    currentUser(),
+                    listCategories(),
+                ]);
+                const customerCategories = nextCategories.filter(
+                    (category) => isCustomerCategory(category),
+                );
+                const serviceGroups = await Promise.all(
+                    customerCategories.map(async (category) => {
+                        const categoryServices = await listServices(category.id);
+                        return categoryServices.map((service) => ({
+                            ...service,
+                            categoryName: category.name,
+                        }));
+                    }),
+                );
+
+                if (!mounted) {
+                    return;
+                }
+
+                setCustomerName(user.username || "Customer");
+                setCreditScore(user.credit_score ?? null);
+                setCategories(customerCategories);
+                setServices(serviceGroups.flat());
+                setActiveCategoryId(customerCategories[0]?.id ?? null);
+            } catch {
+                if (mounted) {
+                    setError("Unable to load services right now.");
+                }
+            } finally {
+                if (mounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadDashboard();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const visibleServices = useMemo(() => {
+        const normalizedSearch = searchQuery.trim().toLowerCase();
+
+        return services.filter((service) => {
+            const matchesCategory =
+                !activeCategoryId || service.category_id === activeCategoryId;
+            const matchesSearch =
+                !normalizedSearch ||
+                service.name.toLowerCase().includes(normalizedSearch);
+
+            return matchesCategory && matchesSearch;
+        });
+    }, [activeCategoryId, searchQuery, services]);
+    const activeCategory = useMemo(
+        () =>
+            categories.find((category) => category.id === activeCategoryId) ??
+            null,
+        [activeCategoryId, categories],
+    );
+    const selectedCategoryInactive = activeCategory?.active === false;
 
     return (
         <SafeAreaView style={styles.safe}>
@@ -76,7 +134,7 @@ export default function HomeScreen() {
                 >
                     <View style={styles.header}>
                         <View style={styles.greeting}>
-                            <Text style={styles.title}>Hello, Dendup</Text>
+                            <Text style={styles.title}>Hello, {customerName}</Text>
                             <Text style={styles.subtitle}>
                                 Find the service you want, and{"\n"}treat yourself
                             </Text>
@@ -84,20 +142,19 @@ export default function HomeScreen() {
 
                         <View style={styles.scoreWrap}>
                             <View style={styles.scoreRing}>
-                                <Text style={styles.scoreText}>78</Text>
+                                <Text style={styles.scoreText}>
+                                    {creditScore ?? "-"}
+                                </Text>
                             </View>
-                            <Image
-                                source={{
-                                    uri: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&q=80",
-                                }}
-                                style={styles.avatar}
-                            />
+                            <Image source={{ uri: avatarImage }} style={styles.avatar} />
                         </View>
                     </View>
 
                     <View style={styles.searchBox}>
                         <Ionicons name="search-outline" size={19} color="#6f7378" />
                         <TextInput
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
                             placeholder="Search"
                             placeholderTextColor="#676b70"
                             style={styles.searchInput}
@@ -105,42 +162,83 @@ export default function HomeScreen() {
                     </View>
 
                     <View style={styles.categoryBar}>
-                        <Pressable style={[styles.categoryItem, styles.categoryActive]}>
-                            <Ionicons name="layers-outline" size={20} color="#3b73d9" />
-                            <Text style={[styles.categoryText, styles.categoryTextActive]}>
-                                All
-                            </Text>
-                        </Pressable>
-                        <Pressable style={styles.categoryItem}>
-                            <Ionicons name="cut-outline" size={20} color="#5d6065" />
-                            <Text style={styles.categoryText}>Barber</Text>
-                        </Pressable>
-                        <Pressable style={styles.categoryItem}>
-                            <Ionicons name="brush-outline" size={20} color="#5d6065" />
-                            <Text style={styles.categoryText}>Beauty</Text>
-                        </Pressable>
+                        {categories.map((category) => {
+                            const active = activeCategoryId === category.id;
+
+                            return (
+                                <Pressable
+                                    key={category.id}
+                                    style={[
+                                        styles.categoryItem,
+                                        active ? styles.categoryActive : undefined,
+                                    ]}
+                                    onPress={() => setActiveCategoryId(category.id)}
+                                >
+                                    <Ionicons
+                                        name={getCategoryIcon(category.name)}
+                                        size={20}
+                                        color={active ? "#3b73d9" : "#5d6065"}
+                                    />
+                                    <Text
+                                        style={[
+                                            styles.categoryText,
+                                            active
+                                                ? styles.categoryTextActive
+                                                : undefined,
+                                        ]}
+                                    >
+                                        {category.name}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
                     </View>
 
-                    <View style={styles.grid}>
-                        {services.map((service) => (
-                            <Pressable
-                                key={service.name}
-                                style={styles.service}
-                                onPress={() =>
-                                    router.push({
-                                        pathname: "/service-profile",
-                                        params: {
-                                            name: service.name,
-                                            image: service.image,
-                                        },
-                                    })
-                                }
-                            >
-                                <Image source={{ uri: service.image }} style={styles.serviceImage} />
-                                <Text style={styles.serviceText}>{service.name}</Text>
-                            </Pressable>
-                        ))}
-                    </View>
+                    {isLoading ? (
+                        <ActivityIndicator color="#3b73d9" />
+                    ) : error ? (
+                        <Text style={styles.emptyText}>{error}</Text>
+                    ) : selectedCategoryInactive ? (
+                        <Text style={styles.emptyText}>
+                            This service is inactive right now.
+                        </Text>
+                    ) : (
+                        <View style={styles.grid}>
+                            {visibleServices.map((service) => (
+                                <Pressable
+                                    key={service.id}
+                                    style={styles.service}
+                                    onPress={() =>
+                                        router.push({
+                                            pathname: "/service-profile",
+                                            params: {
+                                                name: service.name,
+                                                image:
+                                                    service.img ||
+                                                    fallbackServiceImage,
+                                            },
+                                        })
+                                    }
+                                >
+                                    <Image
+                                        source={{
+                                            uri: service.img || fallbackServiceImage,
+                                        }}
+                                        style={styles.serviceImage}
+                                    />
+                                    <Text style={styles.serviceText}>
+                                        {service.name}
+                                    </Text>
+                                </Pressable>
+                            ))}
+
+                            {!visibleServices.length ? (
+                                <Text style={styles.emptyText}>
+                                    No services available
+                                </Text>
+                            ) : null}
+                        </View>
+                    )}
                 </ScrollView>
 
                 <BottomNav active="home" />
@@ -276,5 +374,12 @@ const styles = StyleSheet.create({
         color: "#111111",
         fontSize: 13,
         textAlign: "center",
+    },
+    emptyText: {
+        width: "100%",
+        color: "#6d7075",
+        fontSize: 13,
+        textAlign: "center",
+        paddingVertical: 24,
     },
 });

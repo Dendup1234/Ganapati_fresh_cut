@@ -36,15 +36,12 @@ const metrics = [
   },
 ];
 
-type AdminListTab = "queue" | "blacklisted";
-
 export default function AdminHomeScreen() {
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [togglingCategoryId, setTogglingCategoryId] = useState<number | null>(
     null,
   );
   const [isClosingShop, setIsClosingShop] = useState(false);
-  const [activeListTab, setActiveListTab] = useState<AdminListTab>("queue");
 
   useEffect(() => {
     let mounted = true;
