@@ -3,6 +3,7 @@ import apiClient from "./axios";
 export type ServiceCategory = {
   id: number;
   name: string;
+  active?: boolean;
   created_at?: string;
   updated_at?: string;
 };
@@ -32,6 +33,11 @@ export type ServicePayload = {
 export const SERVICE_APIS = [
   { name: "listCategories", method: "GET", path: "/api/v1/categories" },
   {
+    name: "toggleCategoryActive",
+    method: "PATCH",
+    path: "/api/v1/categories/{id}/toggle_active",
+  },
+  {
     name: "listServices",
     method: "GET",
     path: "/api/v1/categories/{category_id}/services",
@@ -55,6 +61,17 @@ export const SERVICE_APIS = [
 
 export const listCategories = async () => {
   const response = await apiClient.get<ServiceCategory[]>("/api/v1/categories");
+  return response.data;
+};
+
+export const toggleCategoryActive = async (
+  categoryId: number,
+  active: boolean,
+) => {
+  const response = await apiClient.patch<ServiceCategory>(
+    `/api/v1/categories/${categoryId}/toggle_active`,
+    { active },
+  );
   return response.data;
 };
 
