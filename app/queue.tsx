@@ -150,14 +150,13 @@ export default function QueueScreen() {
   const estimatedTime = tokensAhead.reduce((total, token) => {
     const serviceId = token.service?.id;
     const serviceMinutes = serviceId
-      ? serviceEstimatedMinutes[serviceId] ?? 0
+      ? (serviceEstimatedMinutes[serviceId] ?? 0)
       : 0;
 
     return total + serviceMinutes;
   }, 0);
   const serviceName =
     activeToken?.service?.name ?? params.serviceName ?? "your service";
-  const categoryName = params.categoryName ?? "";
 
   const handleLeaveQueue = async () => {
     if (!activeToken) {
@@ -189,7 +188,7 @@ export default function QueueScreen() {
             <Text style={styles.title}>Hello, {customerName}</Text>
             <Text style={styles.subtitle}>
               {activeToken
-                ? `You are ${activeToken.queue_position ?? "-"} in line for ${serviceName}`
+                ? `You are #${activeToken.queue_position ?? "-"} in line for ${serviceName}`
                 : "You are not in an active queue"}
             </Text>
           </View>
@@ -202,17 +201,14 @@ export default function QueueScreen() {
           </View>
         </View>
 
-        <View style={styles.categoryBar}>
-          <Pressable style={[styles.categoryItem, styles.categoryActive]}>
-            <Ionicons name="cut-outline" size={20} color="#3b73d9" />
-            <Text style={[styles.categoryText, styles.categoryTextActive]}>
-              {categoryName || "Queue"}
-            </Text>
-          </Pressable>
-          <Pressable style={styles.categoryItem}>
-            <Ionicons name="ticket-outline" size={20} color="#6c7075" />
-            <Text style={styles.categoryText}>{serviceName}</Text>
-          </Pressable>
+        <View style={styles.serviceNotice}>
+          <View style={styles.serviceNoticeIcon}>
+            <Ionicons name="ticket-outline" size={22} color="#3b73d9" />
+          </View>
+          <View style={styles.serviceNoticeTextWrap}>
+            <Text style={styles.serviceNoticeLabel}>Joined Service</Text>
+            <Text style={styles.serviceNoticeName}>{serviceName}</Text>
+          </View>
         </View>
 
         <View style={styles.listSection}>
@@ -390,6 +386,39 @@ const styles = StyleSheet.create({
     height: 58,
     borderRadius: 29,
     backgroundColor: "#e8e8e8",
+  },
+  serviceNotice: {
+    minHeight: 70,
+    borderWidth: 1,
+    borderColor: "#dce9ff",
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginBottom: 22,
+    backgroundColor: "#f7fbff",
+  },
+  serviceNoticeIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#e8f0ff",
+    marginRight: 12,
+  },
+  serviceNoticeTextWrap: {
+    flex: 1,
+  },
+  serviceNoticeLabel: {
+    color: "#6d7075",
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  serviceNoticeName: {
+    color: "#111111",
+    fontSize: 17,
+    fontWeight: "800",
   },
   categoryBar: {
     alignSelf: "center",
