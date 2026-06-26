@@ -36,7 +36,7 @@ export default function AdminBottomNav({ active }: Props) {
                         <Pressable
                             key={item.key}
                             style={styles.item}
-                            onPress={() => router.push(item.route)}
+                            onPress={() => router.replace(item.route)}
                         >
                             <Ionicons
                                 name={item.icon}
