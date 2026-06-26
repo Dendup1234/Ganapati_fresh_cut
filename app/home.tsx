@@ -212,6 +212,12 @@ export default function HomeScreen() {
                                         router.push({
                                             pathname: "/service-profile",
                                             params: {
+                                                categoryId:
+                                                    service.category_id.toString(),
+                                                categoryName:
+                                                    service.categoryName,
+                                                serviceId:
+                                                    service.id.toString(),
                                                 name: service.name,
                                                 image:
                                                     service.img ||

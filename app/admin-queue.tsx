@@ -1,8 +1,9 @@
 import {
   QueueToken,
   TokenStatus,
-  advanceToken,
+  deleteToken,
   listTokens,
+  updateTokenStatus,
 } from "@/app/api/tokens";
 import { listCategories, listServices } from "@/app/api/services";
 import AdminBottomNav from "@/components/ui/AdminBottomNav";
@@ -22,6 +23,10 @@ import {
 } from "react-native";
 
 type StatusFilter = "active" | TokenStatus;
+type EditableTokenStatus = Extract<
+  TokenStatus,
+  "pending" | "in_progress" | "completed"
+>;
 
 const statusLabels: Record<TokenStatus, string> = {
   pending: "Pending",
@@ -30,24 +35,17 @@ const statusLabels: Record<TokenStatus, string> = {
   cancelled: "Cancelled",
 };
 
-const getAdvanceLabel = (status: TokenStatus) => {
-  if (status === "pending") {
-    return "Start";
-  }
+const editableStatuses: EditableTokenStatus[] = [
+  "pending",
+  "in_progress",
+  "completed",
+];
 
-  if (status === "in_progress") {
-    return "Complete";
-  }
-
-  return "Completed";
-};
-
-const getAdvanceIcon = (status: TokenStatus) => {
-  if (status === "pending") {
-    return "play-circle-outline";
-  }
-
-  return "checkmark-circle-outline";
+const statusIcons: Record<TokenStatus, keyof typeof Ionicons.glyphMap> = {
+  pending: "time-outline",
+  in_progress: "play-circle-outline",
+  completed: "checkmark-circle-outline",
+  cancelled: "close-circle-outline",
 };
 
 const formatElapsed = (createdAt: string) => {
@@ -111,7 +109,10 @@ export default function AdminQueueScreen() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("active");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [advancingId, setAdvancingId] = useState<number | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [statusMenuToken, setStatusMenuToken] = useState<QueueToken | null>(
+    null,
+  );
   const [serviceEstimatedMinutes, setServiceEstimatedMinutes] = useState<
     Record<number, number>
   >({});
@@ -212,26 +213,77 @@ export default function AdminQueueScreen() {
     };
   }, [activeTokens, serviceEstimatedMinutes, tokens]);
 
-  const handleAdvance = async (token: QueueToken) => {
+  const handleStatusChange = async (
+    token: QueueToken,
+    status: EditableTokenStatus,
+  ) => {
     if (token.status === "completed" || token.status === "cancelled") {
       return;
     }
 
-    setAdvancingId(token.id);
+    setStatusMenuToken(null);
+
+    if (token.status === status) {
+      return;
+    }
+
+    setUpdatingId(token.id);
 
     try {
-      const advancedToken = await advanceToken(token.id);
+      const updatedToken = await updateTokenStatus(token.id, status);
 
       setTokens((currentTokens) =>
         currentTokens.map((currentToken) =>
-          currentToken.id === advancedToken.id ? advancedToken : currentToken,
+          currentToken.id === updatedToken.id ? updatedToken : currentToken,
         ),
       );
     } catch {
       Alert.alert("Unable to update status", "Please try again.");
     } finally {
-      setAdvancingId(null);
+      setUpdatingId(null);
     }
+  };
+
+  const handleDeleteToken = (token: QueueToken) => {
+    Alert.alert(
+      "Remove from queue?",
+      "This will cancel this customer's queue token.",
+      [
+        { text: "Keep", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setUpdatingId(token.id);
+
+            try {
+              await deleteToken(token.id);
+              setTokens((currentTokens) =>
+                currentTokens.filter(
+                  (currentToken) => currentToken.id !== token.id,
+                ),
+              );
+            } catch {
+              Alert.alert("Unable to delete token", "Please try again.");
+            } finally {
+              setUpdatingId(null);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleOpenStatusMenu = (token: QueueToken) => {
+    if (
+      token.status === "completed" ||
+      token.status === "cancelled" ||
+      updatingId === token.id
+    ) {
+      return;
+    }
+
+    setStatusMenuToken(token);
   };
 
   return (
@@ -337,12 +389,7 @@ export default function AdminQueueScreen() {
                 const disabled =
                   token.status === "completed" ||
                   token.status === "cancelled" ||
-                  advancingId === token.id;
-
-                const buttonLabel =
-                  advancingId === token.id
-                    ? "Updating..."
-                    : getAdvanceLabel(token.status);
+                  updatingId === token.id;
 
                 return (
                   <View key={token.id} style={styles.queueCard}>
@@ -405,23 +452,53 @@ export default function AdminQueueScreen() {
                       </View>
                     </View>
 
-                    <Pressable
-                      style={[
-                        styles.advanceButton,
-                        token.status === "in_progress" && styles.completeButton,
-                        disabled && styles.disabledButton,
-                      ]}
-                      onPress={() => handleAdvance(token)}
-                      disabled={disabled}
-                    >
-                      <Ionicons
-                        name={getAdvanceIcon(token.status)}
-                        size={16}
-                        color="#ffffff"
-                      />
+                    <View style={styles.cardActions}>
+                      <Pressable
+                        style={[
+                          styles.statusDropdown,
+                          token.status === "in_progress" &&
+                            styles.statusDropdownProgress,
+                          token.status === "completed" &&
+                            styles.statusDropdownDone,
+                          disabled && styles.disabledButton,
+                        ]}
+                        onPress={() => handleOpenStatusMenu(token)}
+                        disabled={disabled}
+                      >
+                        <Ionicons
+                          name={statusIcons[token.status]}
+                          size={16}
+                          color="#ffffff"
+                        />
 
-                      <Text style={styles.advanceText}>{buttonLabel}</Text>
-                    </Pressable>
+                        <Text style={styles.actionStatusText}>
+                          {updatingId === token.id
+                            ? "Updating..."
+                            : statusLabels[token.status]}
+                        </Text>
+
+                        <Ionicons
+                          name="chevron-down-outline"
+                          size={15}
+                          color="#ffffff"
+                        />
+                      </Pressable>
+
+                      <Pressable
+                        style={[
+                          styles.deleteButton,
+                          updatingId === token.id && styles.disabledButton,
+                        ]}
+                        onPress={() => handleDeleteToken(token)}
+                        disabled={updatingId === token.id}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={16}
+                          color="#ffffff"
+                        />
+                      </Pressable>
+                    </View>
                   </View>
                 );
               })}
@@ -475,6 +552,63 @@ export default function AdminQueueScreen() {
             </View>
           </View>
         </View>
+      </Modal>
+
+      <Modal
+        transparent
+        visible={Boolean(statusMenuToken)}
+        animationType="fade"
+        onRequestClose={() => setStatusMenuToken(null)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setStatusMenuToken(null)}
+        >
+          <Pressable style={styles.statusDialog}>
+            <Text style={styles.dialogTitle}>Change Status</Text>
+
+            {statusMenuToken
+              ? editableStatuses.map((status) => {
+                  const selected = statusMenuToken.status === status;
+
+                  return (
+                    <Pressable
+                      key={status}
+                      style={[
+                        styles.statusOption,
+                        selected && styles.statusOptionSelected,
+                      ]}
+                      onPress={() => handleStatusChange(statusMenuToken, status)}
+                    >
+                      <View style={styles.statusOptionLabel}>
+                        <Ionicons
+                          name={statusIcons[status]}
+                          size={19}
+                          color={selected ? "#3b73d9" : "#5f656c"}
+                        />
+                        <Text
+                          style={[
+                            styles.statusOptionText,
+                            selected && styles.statusOptionTextSelected,
+                          ]}
+                        >
+                          {statusLabels[status]}
+                        </Text>
+                      </View>
+
+                      {selected ? (
+                        <Ionicons
+                          name="checkmark-outline"
+                          size={19}
+                          color="#3b73d9"
+                        />
+                      ) : null}
+                    </Pressable>
+                  );
+                })
+              : null}
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );
@@ -707,24 +841,41 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
   },
-  advanceButton: {
+  cardActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statusDropdown: {
+    flex: 1,
     height: 32,
     borderRadius: 7,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    backgroundColor: "#f49a48",
+  },
+  statusDropdownProgress: {
+    backgroundColor: "#3b73d9",
+  },
+  statusDropdownDone: {
     backgroundColor: "#1db5b9",
   },
-  completeButton: {
-    backgroundColor: "#3b73d9",
+  deleteButton: {
+    width: 36,
+    height: 32,
+    borderRadius: 7,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ff626a",
   },
   disabledButton: {
     backgroundColor: "#b8b8b8",
   },
-  advanceText: {
+  actionStatusText: {
     color: "#ffffff",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "800",
   },
   emptyText: {
@@ -746,6 +897,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 18,
     paddingBottom: 18,
+  },
+  statusDialog: {
+    width: "100%",
+    maxWidth: 320,
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 12,
+  },
+  statusOption: {
+    minHeight: 46,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    marginBottom: 6,
+  },
+  statusOptionSelected: {
+    backgroundColor: "#eef4ff",
+  },
+  statusOptionLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  statusOptionText: {
+    color: "#30343a",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  statusOptionTextSelected: {
+    color: "#3b73d9",
   },
   dialogTitle: {
     color: "#111111",

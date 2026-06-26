@@ -43,6 +43,11 @@ export const SERVICE_APIS = [
     path: "/api/v1/categories/{category_id}/services",
   },
   {
+    name: "getService",
+    method: "GET",
+    path: "/api/v1/categories/{category_id}/services/{id}",
+  },
+  {
     name: "createService",
     method: "POST",
     path: "/api/v1/categories/{category_id}/services",
@@ -78,6 +83,13 @@ export const toggleCategoryActive = async (
 export const listServices = async (categoryId: number) => {
   const response = await apiClient.get<AdminService[]>(
     `/api/v1/categories/${categoryId}/services`,
+  );
+  return response.data;
+};
+
+export const getService = async (categoryId: number, serviceId: number) => {
+  const response = await apiClient.get<AdminService>(
+    `/api/v1/categories/${categoryId}/services/${serviceId}`,
   );
   return response.data;
 };
