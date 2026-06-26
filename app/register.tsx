@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
+import { signup } from "@/app/api/auth";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+    Alert,
     Image,
     KeyboardAvoidingView,
     Platform,
@@ -22,6 +24,45 @@ export default function RegisterScreen() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    const goToOtp = () => {
+        router.push({
+            pathname: "/otp",
+            params: { email: email.trim() },
+        });
+    };
+
+    const handleRegister = async () => {
+        if (isLoading) {
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            Alert.alert("Password mismatch", "Please make sure both passwords match.");
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            await signup({
+                email: email.trim(),
+                username: username.trim(),
+                password,
+                password_confirmation: confirmPassword,
+            });
+            goToOtp();
+        } catch {
+            Alert.alert(
+                "Registration unavailable",
+                "The API request failed. You can still continue to the OTP screen for UI testing."
+            );
+            goToOtp();
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.safe}>
@@ -76,10 +117,15 @@ export default function RegisterScreen() {
                     </View>
 
                     <Pressable
-                        style={styles.primaryButton}
-                        onPress={() => router.push("/otp")}
+                        style={[
+                            styles.primaryButton,
+                            isLoading ? styles.primaryButtonDisabled : undefined,
+                        ]}
+                        onPress={handleRegister}
                     >
-                        <Text style={styles.primaryText}>Register</Text>
+                        <Text style={styles.primaryText}>
+                            {isLoading ? "Registering..." : "Register"}
+                        </Text>
                     </Pressable>
 
                     <View style={styles.dividerRow}>
@@ -155,6 +201,9 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         backgroundColor: "#3b73d9",
         marginTop: 24,
+    },
+    primaryButtonDisabled: {
+        opacity: 0.7,
     },
     primaryText: {
         color: "#ffffff",

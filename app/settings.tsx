@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { logout } from "@/app/api/auth";
 import BottomNav from "@/components/ui/BottomNav";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -39,6 +40,11 @@ export default function SettingsScreen() {
     const [name, setName] = useState("Pema Dorji");
     const [phone, setPhone] = useState("17328321");
     const avatarInitial = useMemo(() => name.trim().charAt(0).toUpperCase() || "P", [name]);
+
+    const handleLogout = async () => {
+        await logout().catch(() => undefined);
+        router.replace("/login");
+    };
 
     return (
         <SafeAreaView style={styles.safe}>
@@ -135,7 +141,7 @@ export default function SettingsScreen() {
 
                         <Pressable
                             style={styles.menuRow}
-                            onPress={() => router.replace("/login")}
+                            onPress={handleLogout}
                         >
                             <Ionicons name="log-out-outline" size={22} color="#ff4b4b" />
                             <Text style={styles.logoutText}>Logout</Text>

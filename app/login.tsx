@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { AuthUser, currentUser, login } from "@/app/api/auth";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -22,19 +23,25 @@ const ADMIN_PASSWORD = "admin123";
 const REGISTER_PROMPT = "Don't have an account? ";
 const googleIcon = require("../assets/images/icons8-google-48.png");
 
+const getDashboardRoute = (user?: AuthUser) => {
+    const role = user?.role?.toLowerCase();
+    return user?.is_admin || role === "admin" ? "/admin-home" : "/home";
+};
+
 export default function LoginScreen() {
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [securePassword, setSecurePassword] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = () => {
+    const handleDummyLogin = () => {
         if (
             email.trim().toLowerCase() === ADMIN_EMAIL &&
             password === ADMIN_PASSWORD
         ) {
             router.replace("/admin-home");
-            return;
+            return true;
         }
 
         if (
@@ -42,13 +49,39 @@ export default function LoginScreen() {
             password === DUMMY_PASSWORD
         ) {
             router.replace("/home");
+            return true;
+        }
+
+        return false;
+    };
+
+    const handleLogin = async () => {
+        if (isLoading) {
             return;
         }
 
-        Alert.alert(
-            "Invalid login",
-            "Use test@example.com/password123 or admin@example.com/admin123."
-        );
+        setIsLoading(true);
+
+        try {
+            const loginResult = await login({
+                email: email.trim(),
+                password,
+            });
+            const user = await currentUser();
+
+            router.replace(getDashboardRoute(user ?? loginResult.data));
+        } catch {
+            if (handleDummyLogin()) {
+                return;
+            }
+
+            Alert.alert(
+                "Invalid login",
+                "Use your API account, or test@example.com/password123 and admin@example.com/admin123 while the backend is offline."
+            );
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -104,8 +137,16 @@ export default function LoginScreen() {
                         <Text style={styles.forgotText}>Forgot Password?</Text>
                     </Pressable>
 
-                    <Pressable style={styles.primaryButton} onPress={handleLogin}>
-                        <Text style={styles.primaryText}>Login</Text>
+                    <Pressable
+                        style={[
+                            styles.primaryButton,
+                            isLoading ? styles.primaryButtonDisabled : undefined,
+                        ]}
+                        onPress={handleLogin}
+                    >
+                        <Text style={styles.primaryText}>
+                            {isLoading ? "Logging in..." : "Login"}
+                        </Text>
                     </Pressable>
 
                     <View style={styles.dividerRow}>
@@ -195,6 +236,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "#3b73d9",
+    },
+    primaryButtonDisabled: {
+        opacity: 0.7,
     },
     primaryText: {
         color: "#ffffff",
